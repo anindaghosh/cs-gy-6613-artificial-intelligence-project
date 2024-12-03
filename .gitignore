@@ -163,3 +163,5 @@ cython_debug/
 
 # For MacOS
 .DS_Store
+
+*.csv

@@ -12,6 +12,8 @@ from tempfile import mkdtemp
 from youtube_transcript_api import YouTubeTranscriptApi
 from urllib.parse import urlparse, parse_qs
 
+from clearml import Task
+
 from configs import MONGO_CONNECTION_URL
 
 
@@ -202,6 +204,8 @@ class YoutubeScraper:
 
 
 if __name__ == "__main__":
+
+    task = Task.init(project_name="cs-gy-6613-rag", task_name="scraper")
 
     logger.info("Starting scraping...")
 
