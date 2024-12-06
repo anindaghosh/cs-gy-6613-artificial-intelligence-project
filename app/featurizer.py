@@ -53,7 +53,7 @@ class Featurizer:
 
         def featurize_and_store(self):
             """Featurize raw data and store it in MongoDB and Qdrant."""
-            raw_docs = self.raw_data_collection.find()
+            raw_docs = self.raw_data_collection.find({"platform": "youtube"})
 
             for doc in raw_docs:
 
@@ -103,8 +103,6 @@ class Featurizer:
                         )
                     ],
                 )
-
-                break
 
             logger.info("Featurization complete and data stored.")
 

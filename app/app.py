@@ -7,10 +7,8 @@ qa_pipeline = pipeline("question-answering", model="deepset/roberta-base-squad2"
 
 # Define pre-populated questions
 questions = [
-    "What is ROS2 and its main features?",
-    "How does NAV2 work in robot navigation?",
-    "Explain MoveIt2's motion planning capabilities.",
-    "What are the benefits of using Gazebo for simulations?",
+    "Tell me how can I navigate to a specific pose - include replanning aspects in your answer.",
+    "Can you provide me with code for this task?",
 ]
 
 
