@@ -21,50 +21,59 @@ class MediumScraper:
 
     def scrape(self, link: str):
 
-        # Connect to MongoDB
-        client = pymongo.MongoClient(MONGO_CONNECTION_URL)
-        db = client["rag"]
-        collection = db["pages"]
+        try:
+            # Connect to MongoDB
+            client = pymongo.MongoClient(MONGO_CONNECTION_URL)
+            db = client["rag"]
+            collection = db["rag_raw_data"]
 
-        # Request the page
-        res = requests.get(link)
-        res.raise_for_status()
+            logger.info(f"Starting scraping Medium article: {link}")
 
-        # Parse the page
-        soup = BeautifulSoup(res.text, "html.parser")
+            if collection.find_one({"url": link}):
+                logger.info(f"Article already exists in the database: {link}")
+                return
 
-        # Extract article details
-        # title = soup.find("h1").get_text()
-        # content = " ".join([p.get_text() for p in soup.find_all("p")])
+            # Request the page
+            res = requests.get(link)
+            res.raise_for_status()
 
-        title = soup.find_all("h1", class_="pw-post-title")
-        subtitle = soup.find_all("h2", class_="pw-subtitle-paragraph")
-        author = soup.find("meta", {"name": "author"})["content"]
-        data = {
-            "Title": title[0].string if title else None,
-            "Subtitle": subtitle[0].string if subtitle else None,
-            "Content": soup.get_text(),
-        }
-        publication_date = soup.find("meta", {"property": "article:published_time"})[
-            "content"
-        ]
+            # Parse the page
+            soup = BeautifulSoup(res.text, "html.parser")
 
-        # Save the page
-        collection.insert_one(
-            {
-                "url": link,
-                "html": res.text,
-                "title": title[0].string if title else None,
-                "subtitle": subtitle[0].string if subtitle else None,
-                "author": author,
-                "publication_date": publication_date,
-                "content": soup.get_text(),
-                "platform": "medium",
-            }
-        )
+            # Extract article details
 
-        # Close the MongoDB connection
-        client.close()
+            title = soup.find_all("h1", class_="pw-post-title")
+            subtitle = soup.find_all("h2", class_="pw-subtitle-paragraph")
+            author = soup.find("meta", {"name": "author"})["content"]
+
+            publication_date = soup.find(
+                "meta", {"property": "article:published_time"}
+            )["content"]
+
+            # Save the page
+            collection.insert_one(
+                {
+                    "url": link,
+                    "html": res.text,
+                    "title": title[0].string if title else None,
+                    "subtitle": subtitle[0].string if subtitle else None,
+                    "author": author,
+                    "publication_date": publication_date,
+                    "content": soup.get_text(),
+                    "platform": "medium",
+                }
+            )
+
+            # Close the MongoDB connection
+            client.close()
+
+        except Exception as e:
+            logger.error(f"Error fetching Medium article: {link}")
+            logger.error(e)
+            return None
+
+        finally:
+            logger.info(f"Finished scraping Medium article: {link}")
 
 
 class GithubScraper:
@@ -85,7 +94,7 @@ class GithubScraper:
             return
 
         # Request the page
-        logger.info(f"Starting scrapping GitHub repository: {link}")
+        logger.info(f"Starting scraping GitHub repository: {link}")
         repo_name = link.rstrip("/").split("/")[-1]
         local_temp = mkdtemp()
 
@@ -117,11 +126,12 @@ class GithubScraper:
                 }
             )
 
-        except Exception:
-            logger.error(f"Error scrapping GitHub repository: {link}")
+        except Exception as e:
+            logger.error(f"Error scraping GitHub repository: {link}")
+            logger.error(e)
         finally:
             shutil.rmtree(local_temp)
-            logger.info(f"Finished scrapping GitHub repository: {link}")
+            logger.info(f"Finished scraping GitHub repository: {link}")
 
 
 class YoutubeScraper:
@@ -148,7 +158,7 @@ class YoutubeScraper:
             return None
 
         finally:
-            logger.info(f"Finished scrapping Youtube video: {link}")
+            logger.info(f"Finished scraping Youtube video: {link}")
 
     def preprocess_transcript(self, transcript):
         """
@@ -171,7 +181,7 @@ class YoutubeScraper:
         try:
             data = {
                 "video_id": video_id,
-                "transcript": transcript,
+                "content": transcript,
                 "platform": "youtube",
                 "url": link,
             }
@@ -197,10 +207,11 @@ class YoutubeScraper:
                     self.load_to_mongodb(video_id, link, processed_transcript)
 
         except Exception as e:
-            logger.error(f"Error scrapping YouTube video: {link}")
+            logger.error(f"Error scraping YouTube video: {link}")
+            logger.error(e)
 
         finally:
-            logger.info(f"Finished scrapping Youtube video: {link}")
+            logger.info(f"Finished scraping Youtube video: {link}")
 
 
 if __name__ == "__main__":
@@ -219,7 +230,7 @@ if __name__ == "__main__":
     db = client["rag"]
     collection = db["media_urls"]
 
-    urls = collection.find()
+    urls = collection.find({"platform": "medium"})
 
     for doc in urls:
         link = doc["url"]
