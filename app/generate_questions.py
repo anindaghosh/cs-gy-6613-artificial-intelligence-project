@@ -6,22 +6,17 @@ from configs import OPENAI_API_KEY
 
 # Set up OpenAI API key
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-def get_context_from_mongo():
+def get_context_from_mongo(collection):
 
-    # Connect to MongoDB
-    client = get_mongo_client()
-    db = client["rag"]
-    collection = db["rag_raw_data"]
-
-    posts = collection.find({"platform": "youtube"})
+    posts = collection.find({"platform": "medium"})
 
     final_content = ""
 
     for post in posts:
-        content = post["content"]
+        content = post["cleaned_content"]
         final_content += content
 
     return final_content
@@ -77,7 +72,7 @@ def generate_questions(context, num_questions=5):
         context=context
     )
 
-    response = client.chat.completions.create(
+    response = openai_client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
@@ -90,9 +85,9 @@ def generate_questions(context, num_questions=5):
     # Extract the questions from the response
     # questions = response["choices"][0]["message"]["content"].strip().split("\n")
 
-    print(response)
+    # print(response)
 
-    print(response.choices[0].message.content.strip())
+    # print(response.choices[0].message.content.strip())
 
     result = response.choices[0].message.content.strip()
 
@@ -100,7 +95,7 @@ def generate_questions(context, num_questions=5):
 
     questions = json.loads(json_body)
 
-    print(questions)
+    # print(questions)
 
     # questions = [q.strip() for q in response.split("\n\n") if q.strip()]
     # return questions
@@ -110,6 +105,13 @@ def generate_questions(context, num_questions=5):
 
 if __name__ == "__main__":
 
+    # Connect to MongoDB
+    mongo_client = get_mongo_client()
+    db = mongo_client["rag"]
+    collection = db["rag_cleaned_data"]
+
+    instruct_set = db["instruct_set"]
+
     # Example usage
     sample_context = (
         "The linux-real-time-kernel-builder is a tool to configure and build real-time kernels optimized for ROS2. "
@@ -117,7 +119,7 @@ if __name__ == "__main__":
     )
 
     # get context from my own data in mongo
-    context = get_context_from_mongo()
+    context = get_context_from_mongo(collection)
 
     # print(context)
 
@@ -138,5 +140,14 @@ if __name__ == "__main__":
 
         for question in questions:
             print(question)
+
+            # if question is already in the collection, skip
+            if instruct_set.find_one({"instruction": question["instruction"]}):
+                print(f"Instruction already exists: {question['instruction']}")
+                continue
+
+            instruct_set.insert_one(question)
+
+        # break
 
     # print(all_questions)
