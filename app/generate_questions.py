@@ -9,9 +9,9 @@ from configs import OPENAI_API_KEY
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-def get_context_from_mongo(collection):
+def get_context_from_mongo(collection, platform):
 
-    posts = collection.find({"platform": "medium"})
+    posts = collection.find({"platform": platform})
 
     final_content = ""
 
@@ -54,6 +54,7 @@ def generate_questions(context, num_questions=5):
         Instructions must never explicitly mention a context, a system, a course, or an extract. \
         Instructions must be self-contained and general. \
         Answers must imitate the writing style of the context. \
+        Answers can also include code snippets, examples, or explanations. \
             
         Example instruction: Explain the concept of an LLM Twin. \
         Example answer: An LLM Twin is essentially an AI character that mimics your writing style, personality, and voice. \
@@ -119,7 +120,7 @@ if __name__ == "__main__":
     )
 
     # get context from my own data in mongo
-    context = get_context_from_mongo(collection)
+    context = get_context_from_mongo(collection=collection, platform="github")
 
     # print(context)
 

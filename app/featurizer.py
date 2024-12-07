@@ -8,6 +8,8 @@ from uuid import uuid4
 from loguru import logger
 from configs import MONGO_CONNECTION_URL, QDRANT_URL, QDRANT_API_KEY
 
+from preprocess_chunks import preprocess_chunks
+
 
 class Featurizer:
 
@@ -51,22 +53,24 @@ class Featurizer:
             embeddings = outputs.last_hidden_state.mean(dim=1).squeeze()
             return embeddings.numpy()
 
-        def featurize_and_store(self):
+        def featurize_and_store(self, chunks):
             """Featurize raw data and store it in MongoDB and Qdrant."""
-            raw_docs = self.raw_data_collection.find({"platform": "youtube"})
+            # raw_docs = self.raw_data_collection.find({"platform": "youtube"})
 
-            for doc in raw_docs:
+            for doc in chunks:
 
-                # print(doc)
+                print(doc)
 
-                # break
+                # # print(doc)
 
-                # Check if document already exists in the featurized collection
-                if self.featurized_collection.find_one({"id": doc["_id"]}):
-                    logger.info(
-                        f"Document already exists in the database: {doc['_id']}"
-                    )
-                    continue
+                # # break
+
+                # # Check if document already exists in the featurized collection
+                # if self.featurized_collection.find_one({"id": doc["_id"]}):
+                #     logger.info(
+                #         f"Document already exists in the database: {doc['_id']}"
+                #     )
+                #     continue
 
                 # Preprocess text and generate embeddings
                 text = self.preprocess_text(doc["content"])
@@ -76,7 +80,7 @@ class Featurizer:
                 # Store in MongoDB
                 self.featurized_collection.insert_one(
                     {
-                        "id": doc["_id"],
+                        # "id": doc["_id"],
                         "text": text,
                         "embedding": embeddings.tolist(),
                         "platform": doc["platform"],
@@ -114,9 +118,11 @@ if __name__ == "__main__":
 
     logger.info("Featurizing data...")
 
+    chunks = preprocess_chunks()
+
     featurizer = Featurizer()
 
     # Featurize data
-    featurizer.featurize_and_store()
+    featurizer.featurize_and_store(chunks=chunks)
 
     logger.info("Featurization complete.")
