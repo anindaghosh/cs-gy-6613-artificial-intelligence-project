@@ -1,5 +1,5 @@
 import pymongo
-from configs import MONGO_CONNECTION_URL
+from app.configs import MONGO_CONNECTION_URL
 
 
 def get_mongo_client():

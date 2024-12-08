@@ -7,7 +7,7 @@ from configs import QDRANT_API_KEY, QDRANT_URL
 
 # Initialize Qdrant Client
 qdrant_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
-COLLECTION_NAME = "github_documents"
+COLLECTION_NAME = "rag_vectors"
 
 # Initialize embedding model
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
@@ -28,7 +28,7 @@ def retrieve_context(question, top_k=3):
     search_result = qdrant_client.search(
         collection_name=COLLECTION_NAME, query_vector=question_embedding, limit=top_k
     )
-    return [hit.payload["metadata"]["content"] for hit in search_result]
+    return [hit.payload["text"] for hit in search_result]
 
 
 # Generate dataset

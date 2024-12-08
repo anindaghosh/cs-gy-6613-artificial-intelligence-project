@@ -14,7 +14,7 @@ from urllib.parse import urlparse, parse_qs
 
 from clearml import Task
 
-from configs import MONGO_CONNECTION_URL
+from app.configs import MONGO_CONNECTION_URL
 
 
 class MediumScraper:
@@ -214,9 +214,9 @@ class YoutubeScraper:
             logger.info(f"Finished scraping Youtube video: {link}")
 
 
-if __name__ == "__main__":
+def etl_scrape():
 
-    task = Task.init(project_name="cs-gy-6613-rag", task_name="scraper")
+    task = Task.init(project_name="cs-gy-6613-rag", task_name="etl_scraper")
 
     logger.info("Starting scraping...")
 
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     db = client["rag"]
     collection = db["media_urls"]
 
-    urls = collection.find({"platform": "medium"})
+    urls = collection.find()
 
     for doc in urls:
         link = doc["url"]
@@ -244,3 +244,10 @@ if __name__ == "__main__":
             youtube_scraper.scrape(link)
 
     logger.info("Finished scraping.")
+
+    task.close()
+
+
+if __name__ == "__main__":
+
+    etl_scrape()
