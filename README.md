@@ -91,9 +91,9 @@ The `Retrieval-Augmented Generation (RAG)` system is a complex architecture comp
 	-  **Qdrant:** A vector search engine that allows efficient retrieval of high-dimensional embeddings based on similarity. This component is key to the RAG system’s retrieval functionality.
 	-  **ClearML:** An experiment tracking and orchestration system that helps manage the machine learning pipeline, from data ingestion and model training to evaluation and deployment.
 
-  
-
 	**Functionality:** Use Docker Compose to ensure that all the services (App, MongoDB, Qdrant, ClearML) are containerized and orchestrated together.
+
+	![Docker PS](docker_ps.png)
 
   
 
