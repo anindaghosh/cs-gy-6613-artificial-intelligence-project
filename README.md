@@ -276,6 +276,8 @@ The fine-tuned model has been uploaded to [anindaghosh/cs-gy-6613-rag-project](h
 1.  With  the  help  of  Open  Web  UI  the  user  to  interact  with  the  RAG  system  using  Ollama  and  pull  our  model  from  HF  hub.
 
 2.  ClearML  experiment  tracking  and  orchestration,  ensuring  that  all  training  parameters  and  results  are  logged  for  reproducibility.
+
+![Final Result](final_result.png)
   
 
 ##  Features
