@@ -286,23 +286,10 @@ List the key features of your project.
 - Feature 2: Clean the extracted content using Regex and other best practices to remove Non-ASCII characters
 - Feature 3: Chunk the large documents into smaller, more manageable segments 
 - Feature 4: Embed the chunks by transforming text into numerical vectors that capture its semantic meaning
-- Feature 5: Generated instruct datasets using 
-  
-
--  Feature 1 - Data Collection from MongoDB and Qdrant
-
--  Feature 2 - Custom Instruction Dataset
-
--  Feature 3 - Fine-Tuning of LLaMA Model using LoRA
-
--  Feature 4 - Training Pipeline with LoRA & Mixed Precision
-
--  Feature 5 - Hugging Face Integration
-
--  Feature 6 - Model deployment using Open Web UI
-
--  Feature 7 - Rag System
-
+- Feature 5: Generated instruct datasets using OpenAI APIs and push to HuggingFace
+- Feature 6: Fine-Tuning of Llama Model using LoRA
+- Feature 7: Model Deployment to Hugging Face and Ollama
+- Feature 8: Inference using Open WebUI
   
 
 ##  Technologies Used
