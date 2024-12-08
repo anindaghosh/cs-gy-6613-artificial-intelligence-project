@@ -210,12 +210,14 @@ services:
 
 
   qdrant:
-    image: qdrant/qdrant:v1.2.2
+    image: qdrant/qdrant
     container_name: qdrant
+    restart: unless-stopped
     ports:
       - "6333:6333"
+      - "6334:6334"
     volumes:
-      - qdrant_storage:/qdrant/storage
+      - ./qdrant_storage:/qdrant/storage:z
 
 networks:
   backend:

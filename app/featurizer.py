@@ -1,14 +1,13 @@
-from transformers import AutoTokenizer, AutoModel
 import torch
-from pymongo import MongoClient
+from transformers import AutoTokenizer, AutoModel
+from clearml import Task
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import PointStruct, VectorParams
-import numpy as np
 from uuid import uuid4
 from loguru import logger
-from configs import MONGO_CONNECTION_URL, QDRANT_URL, QDRANT_API_KEY
 
-from preprocess_chunks import preprocess_chunks
+from app.configs import QDRANT_URL
+from app.helpers.mongo_client import get_mongo_client
 
 
 class Featurizer:
@@ -16,14 +15,16 @@ class Featurizer:
     try:
 
         # MongoDB Setup
-        mongo_client = MongoClient(MONGO_CONNECTION_URL)
-        db = mongo_client["rag"]
+        # mongo_client = MongoClient(MONGO_CONNECTION_URL)
+        # db = mongo_client["rag"]
 
-        raw_data_collection = db["rag_raw_data"]
-        featurized_collection = db["featurized_data"]
+        # raw_data_collection = db["rag_raw_data"]
+        # featurized_collection = db["featurized_data"]
 
         # Qdrant Setup
-        qdrant_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+        # qdrant_client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
+        qdrant_client = QdrantClient(url=QDRANT_URL)
+
         VECTOR_DIM = 384
 
         # Define the vector configuration
@@ -53,13 +54,13 @@ class Featurizer:
             embeddings = outputs.last_hidden_state.mean(dim=1).squeeze()
             return embeddings.numpy()
 
-        def featurize_and_store(self, chunks):
+        def featurize_and_store(self, chunks, featurized_collection):
             """Featurize raw data and store it in MongoDB and Qdrant."""
             # raw_docs = self.raw_data_collection.find({"platform": "youtube"})
 
-            for doc in chunks:
+            for i, doc in enumerate(chunks):
 
-                print(doc)
+                # print(doc)
 
                 # # print(doc)
 
@@ -78,7 +79,7 @@ class Featurizer:
                 embeddings = self.generate_embeddings(text)
 
                 # Store in MongoDB
-                self.featurized_collection.insert_one(
+                featurized_collection.insert_one(
                     {
                         # "id": doc["_id"],
                         "text": text,
@@ -88,7 +89,7 @@ class Featurizer:
                     }
                 )
 
-                logger.info("Stored in MongoDB")
+                logger.info(f"Stored document {i+1} in MongoDB")
 
                 # check if collection rag_vectors exists in Qdrant else create
                 if not self.qdrant_client.collection_exists(
@@ -108,21 +109,41 @@ class Featurizer:
                     ],
                 )
 
-            logger.info("Featurization complete and data stored.")
+                logger.info(
+                    f"Featurization for document {i+1} complete and data stored."
+                )
+
+            # logger.info(f"Featurization for document {i+1} complete and data stored.")
 
     except Exception as e:
         logger.error(f"Error featurizing data: {e}")
 
 
-if __name__ == "__main__":
+def etl_featurize_step():
+
+    task = Task.init(project_name="cs-gy-6613-rag", task_name="etl_featurizer")
 
     logger.info("Featurizing data...")
 
-    chunks = preprocess_chunks()
+    mongo_client = get_mongo_client()
+    db = mongo_client["rag"]
+    chunk_collection = db["rag_chunked_data"]
+    featurized_collection = db["featurized_data"]
+
+    chunks = chunk_collection.find({}).limit(100)
 
     featurizer = Featurizer()
 
     # Featurize data
-    featurizer.featurize_and_store(chunks=chunks)
+    featurizer.featurize_and_store(
+        chunks=chunks, featurized_collection=featurized_collection
+    )
 
     logger.info("Featurization complete.")
+
+    task.close()
+
+
+if __name__ == "__main__":
+
+    etl_featurize_step()
