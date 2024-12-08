@@ -232,7 +232,9 @@ pip  install  -r  requirements.txt
 
 ```
 
-  
+
+The project uses a **`.env (.env.example in the app folder)`** to access environment variables and should be updated with appropriate values to access MongoDB and Qdrant DB.
+
 
 ##  Usage
 
