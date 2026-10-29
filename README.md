@@ -27,27 +27,33 @@ Built for CS-GY 6613 (Artificial Intelligence) at NYU Tandon.
 ## Architecture
 
 ```mermaid
-flowchart LR
-    subgraph Ingestion["Ingestion pipeline (ClearML tasks)"]
-        A[GitHub / Medium / YouTube] -->|scrape| B[(MongoDB<br/>raw)]
-        B -->|clean| C[(MongoDB<br/>cleaned)]
+flowchart TB
+    subgraph Ingestion["1. Ingestion pipeline (each step is a ClearML task)"]
+        direction LR
+        A[GitHub / Medium / YouTube<br/>175 sources] -->|scrape| B[(MongoDB<br/>raw docs)]
+        B -->|clean| C[(MongoDB<br/>cleaned docs)]
         C -->|chunk| D[(MongoDB<br/>chunks)]
-        D -->|embed MiniLM-L6| E[(Qdrant<br/>rag_vectors)]
+        D -->|embed<br/>MiniLM-L6| E[(Qdrant<br/>rag_vectors)]
     end
 
-    subgraph Training["Fine-tuning"]
-        C -->|GPT-4o| F[Instruction dataset<br/>3,050 pairs]
-        F -->|LoRA, Unsloth| G[Llama 3.1 8B<br/>fine-tuned]
-        G -->|GGUF| H[Ollama]
+    subgraph Training["2. Fine-tuning"]
+        direction LR
+        F[GPT-4o generates<br/>3,050 instruction pairs] -->|LoRA with Unsloth| G[Llama 3.1 8B<br/>fine-tuned]
+        G -->|export GGUF| H[Ollama]
     end
 
-    subgraph Serving["Inference"]
-        Q[User question] -->|embed| E
-        E -->|top-k chunks| R[Prompt with context]
-        R --> H
-        H --> S[Answer + sources]
-        H --- W[Open WebUI]
+    subgraph Serving["3. Inference"]
+        direction LR
+        Q[User question] -->|embed| E2{{Qdrant search}}
+        E2 -->|top-k chunks| R[Prompt with context]
+        R --> M[Fine-tuned model<br/>on Ollama]
+        M --> S[Answer + sources]
+        W[Open WebUI] -. chat .-> M
     end
+
+    Ingestion -->|cleaned docs| Training
+    Ingestion -->|vector index| Serving
+    Training -->|served model| Serving
 ```
 
 ### 1. Ingestion (`app/scraper.py`)

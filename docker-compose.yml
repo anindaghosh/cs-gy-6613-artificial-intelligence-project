@@ -213,7 +213,8 @@ services:
 
 
   qdrant:
-    image: qdrant/qdrant
+    # pinned to match the format of the committed qdrant_storage/ snapshot
+    image: qdrant/qdrant:v1.12.5
     container_name: qdrant
     restart: unless-stopped
     ports:
