@@ -1,4 +1,3 @@
-version: "3.6"
 services:
 
   openWebUI:
@@ -6,13 +5,17 @@ services:
     restart: always
     ports:
       - "3000:8080"
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - open-webui-local:/app/backend/data
+    depends_on:
+      - ollama
 
   ollama:
-    image: ollama/ollama:0.1.34
+    image: ollama/ollama:0.5.1
     ports:
       - "11434:11434"
     volumes:
@@ -210,7 +213,8 @@ services:
 
 
   qdrant:
-    image: qdrant/qdrant
+    # pinned to match the format of the committed qdrant_storage/ snapshot
+    image: qdrant/qdrant:v1.12.5
     container_name: qdrant
     restart: unless-stopped
     ports:
@@ -230,6 +234,4 @@ volumes:
   mongodb_data:
   qdrant_storage:
   ollama-local:
-    external: true
   open-webui-local:
-    external: true

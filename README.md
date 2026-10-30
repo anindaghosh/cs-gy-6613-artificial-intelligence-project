@@ -1,328 +1,196 @@
-
-#  Artificial Intelligence Project - Finetuned RAG Systems Engineering (CS-GY 6613)
-
-  
-
-##  Table of Contents
-
--  [Introduction](#introduction)
-
--  [Project Overview](#project-overview)
-
--  [Installation](#installation)
-
--  [Usage](#usage)
-
--  [Features](#features)
-
--  [Technologies Used](#technologies-used)
-
--  [Contributing](#contributing)
-
--  [License](#license)
-
--  [Contact](#contact)
-
-  
-
-##  Team Members
-
-1.  **Aninda Ghosh** (ag10293)
-
--  **GitHub**: anindaghosh
-
--  **HuggingFace**: anindaghosh
-
-2.  **Samrudhi Baldota** (sb10212)
-
--  **GitHub**: samrudhibaldota
-
--  **HuggingFace**: N/A
-
-  
-
-##  Introduction
-
-  
-
-The Retrieval-Augmented Generation (RAG) system we are developing aims to provide a powerful, domain-specific solution for ROS2 robotics developers, particularly those working on the navigation stack of autonomous robots with egomotion. The purpose of this project is to create an intelligent system that can efficiently retrieve and generate answers related to specific questions about ROS2, navigation, motion planning, and simulation in robotics. The system will combine retrieval-based and generation-based models to offer highly relevant, context-aware responses that assist developers in their work.
-
-  
-
-The goal of the project:
-
-1.  Provide a Robust Information Retrieval System : To build a vector search engine using Qdrant to retrieve domain related data from a large corpus of information.
-
-  
-
-2.  Domain-Specific Language Generation: To Fine-tune a pre-trained language model to understand and generate accurate responses based on the retrieved documents, focusing on ROS2 middleware, Nav2 navigation, Movit2 motion planning, and Gazebo simulation.
-
-  
-
-3.  ETL and Featurization Pipelines: To Design a pipeline to ingest various sources of data (e.g., GitHub- ROS2 documentation, YouTube videos , Medium) and convert this raw data into vector embeddings that are suitable for use by the RAG system.
-
-  
-
-4.  User Interaction via Gradio (or other system): To Build an interactive Gradio app where users can query the system, select predefined questions related to the subdomains, and receive domain-specific answers in real-time.
-
-  
-
-5.  Scalable, Modular Architecture: Use Docker to containerize the system, ensuring reproducibility and scalability across different development environments. Integrate ClearML for experiment tracking and orchestration, ensuring that the system's performance is continuously monitored and improved.
-
-  
-
-##  Project Overview
-
-  
-
-The `Retrieval-Augmented Generation (RAG)` system is a complex architecture composed of several key components that work together to enable an intelligent, domain-specific question-answering system for ROS2 robotics developers. Each component is designed to serve a distinct purpose while interacting seamlessly with the others. Below is an overview of the main components and their functionality:
-
-  
-
-1.  **Environment and Infrastructure (Docker)**
-
-	**Purpose:** Set up a consistent, reproducible development environment that includes all necessary services for running the RAG system.
-
-  
-
-	**Components:**
-	-  **App:** A containerized service responsible for managing and serving machine learning models, interacting with APIs (e.g., Hugging Face Hub), and processing data.
-	-  **MongoDB:** A NoSQL database used to store both raw data (from the ETL pipeline) and featurized data (embeddings) in a flexible, scalable way.
-	-  **Qdrant:** A vector search engine that allows efficient retrieval of high-dimensional embeddings based on similarity. This component is key to the RAG system’s retrieval functionality.
-	-  **ClearML:** An experiment tracking and orchestration system that helps manage the machine learning pipeline, from data ingestion and model training to evaluation and deployment.
-
-	**Functionality:** Use Docker Compose to ensure that all the services (App, MongoDB, Qdrant, ClearML) are containerized and orchestrated together.
-
-	![Docker PS](docker_ps.png)
-
-  
-
-2.  **ETL Pipeline (Extract, Transform, Load)**
-
-	**Purpose:** Extract relevant data from multiple sources (e.g., GitHub repositories, YouTube videos), transform it into a usable format, and load it into the database for later use.
-
-	**Components:**
-
-	- **Data Sources:** This includes ROS2 documentation (hosted on GitHub), YouTube video transcripts, and potentially other media related to ROS2 robotics, navigation, motion planning, and simulation.
-
-	- **ClearML Orchestrator:** Used to orchestrate the ETL pipeline, allowing for efficient scheduling and tracking of the data ingestion process.
-
-	- **MongoDB Database:** Stores the raw, unprocessed data (e.g., video transcripts, documentation) that will later be transformed and featurized.
-
-	**Functionality:**
-	
-	- **Extract:** Use APIs or scraping techniques to pull ROS2-related documentation and other domain-specific media (e.g., video transcripts) from online platforms.
-	- **Transform:** Clean and preprocess the raw data (e.g., parsing and structuring text from video transcripts or markdown files).
-	-  **Load:** Insert the processed raw data into MongoDB for easy retrieval during the featurization and retrieval stages.
-
-  
-
-3.  **Featurization Pipeline**
-
-	**Purpose:** Convert raw textual data into numerical vector embeddings that can be used by the retrieval and generation models in the RAG system.
-	
-	**Components:**
-
-	- **Sentence Transformers:** A pre-trained model that converts raw text into vector embeddings. These embeddings capture the semantic meaning of the text and allow for similarity-based retrieval.
-	- **Qdrant Vector Database:** Stores these embeddings and provides fast, similarity-based retrieval to support the generation model in finding relevant data.
-
-	**Functionality:**
-	- **Featurization:** Use a model like SentenceTransformers to encode text from the ROS2 documentation and video transcripts into high-dimensional vectors.
-	- **Storing Embeddings:** Insert these embeddings into Qdrant, allowing for efficient nearest-neighbor search when a query is made.
-	- **Indexing and Searching:** The featurized data in Qdrant is indexed, enabling fast retrieval based on the similarity between the query vector and the stored vectors.
-
-  
-
-4.  **Retrieval System (Vector Search with Qdrant)**
-
-	**Purpose:** Retrieve relevant documents from the database based on the similarity between the query and stored embeddings.
-
-  
-
-	**Components:**
-	- **Qdrant:** The vector search engine that indexes embeddings and allows for fast similarity searches.
-
-	- **Functionality:** When a user asks a question, the system generates an embedding of the query using the same model used for featurization.
-
-	Qdrant performs a nearest-neighbor search to find the most relevant documents (or embeddings) from the database based on the query embedding.
-
-	The retrieved documents are passed to the generation model to create a coherent, context-aware response.
-
-5.  **Generation Model (Pre-trained Language Model)**
-
-	**Purpose:** Generate human-like, context-aware responses to user queries by synthesizing information from the retrieved documents.
-
-	**Components:**
-
-	- **Pre-trained Language Model:** A transformer-based model (e.g., GPT, T5, or a custom fine-tuned model) that generates text based on input prompts.
-
-	**Functionality:** The generation model receives a combination of the user query and the retrieved documents (context) from Qdrant. 
-	
-	It uses this context to generate a response, combining the information from multiple documents to create a coherent and relevant answer.
-	
-	The model can be fine-tuned on domain-specific data (ROS2, navigation, etc.) to improve accuracy and relevance of the responses.
-
-  
-
-6.  **Fine-Tuning**
-
-	**Purpose:** Fine-tune the language model to improve its performance on domain-specific queries related to ROS2 robotics, Gazebo using `Llama 3.1.8` pre-trained model.
-	
-	**Components:**
-	- Huggingface Transformers: A framework for fine-tuning pre-trained models on custom datasets.
-	- ROS2-specific Dataset: A curated dataset containing domain-specific content (e.g., ROS2 documentation, navigation code snippets, etc.).
-
-	**Functionality:** Use the fine-tuning process to adapt a general-purpose language model to the specific needs of ROS2, improving the quality of responses in the domain.
-	
-	Fine-tune the model on the preprocessed ROS2-related data to ensure it understands the terminology, concepts, and intricacies of the domain.
-
-  
-
-7.  **User Interface**
-
-	**Purpose:** Provide an interactive, user-friendly interface for interacting with the fine-tuned model built from the RAG system.
-
-	  **Components:**
-	  - **Open Web UI:** Open WebUI is an [extensible](https://github.com/open-webui/pipelines), feature-rich, and user-friendly self-hosted WebUI designed to operate entirely offline. It supports various LLM runners, including Ollama and OpenAI-compatible APIs.
-
-	  **Functionality:** Users can input questions related to the four ROS2 subdomains (ROS2 middleware, Nav2, Movit2, and Gazebo simulation).
-
-	The system retrieves relevant information and generates answers based on the RAG system.
-	
-	A dropdown menu pre-populates common questions for users to select from, streamlining the interaction process.
-	
-	The app displays the generated answers and allows users to further refine or modify their queries.  
-
-8.  **Experiment Tracking and Orchestration (ClearML)**
-
-	**Purpose:** Track and manage the machine learning experiments, data pipelines, and model evaluations.
-	
-	**Components:**
-	- **ClearML:** An orchestrator and experiment tracking system that records data preprocessing, model training, fine-tuning, and performance evaluations.
-	- **Functionality:** Track Experiments: Monitor model training, fine-tuning, and evaluation experiments.
-	- **Pipeline Orchestration:** Schedule and manage ETL and featurization pipelines, ensuring smooth execution and reproducibility.
-	- **Performance Monitoring:** Track key metrics and model performance to evaluate improvements during fine-tuning or iterative development.
-
-  
-  
-
-##  Installation
-
-Instructions on how to install and set up the project.
-
-```bash
-
-# Clone the repository
-
-git  clone  https://github.com/anindaghosh/cs-gy-6613-artificial-intelligence-project
-
-# Navigate to the project directory
-
-cd  cs-gy-6613-artificial-intelligence-project
-
-# Set up a virtual environment
-
-python  -m  venv  venv
-
-source  venv/bin/activate
-
-# Install dependencies
-
-pip  install  -r  requirements.txt
-
+# ROS2 Robotics Assistant: a fine-tuned RAG system
+
+A Retrieval-Augmented Generation (RAG) assistant that answers questions for ROS2 robotics developers. It covers four subdomains: **ROS2 middleware**, **Nav2** navigation, **MoveIt2** motion planning and **Gazebo** simulation.
+
+The project covers the full lifecycle: scraping a domain corpus, cleaning and chunking it, embedding it into a vector database, generating a synthetic instruction dataset, fine-tuning Llama 3.1 8B with LoRA, and serving the model locally behind a chat UI. Every step is tracked with ClearML.
+
+Built for CS-GY 6613 (Artificial Intelligence) at NYU Tandon.
+
+| Artifact | Link |
+| --- | --- |
+| Fine-tuned model (Hugging Face) | [anindaghosh/cs-gy-6613-rag-project](https://huggingface.co/anindaghosh/cs-gy-6613-rag-project) |
+| Fine-tuned model (Ollama) | [anindaghosh/cs-gy-6613-rag-project](https://ollama.com/anindaghosh/cs-gy-6613-rag-project) |
+| Instruction dataset | [anindaghosh/cs-gy-6613-rag-instruct-set](https://huggingface.co/datasets/anindaghosh/cs-gy-6613-rag-instruct-set) |
+| Fine-tuning notebook | [Open in Colab](https://colab.research.google.com/github/anindaghosh/cs-gy-6613-artificial-intelligence-project/blob/main/notebooks/02_finetune_llama3_lora.ipynb) |
+
+![Open WebUI chatting with the fine-tuned model](docs/images/open_webui_demo.png)
+
+## Highlights
+
+- **175 curated sources** (86 GitHub repositories, 66 Medium articles, 23 YouTube videos) scraped into MongoDB.
+- **Vector search** over 384-dimensional `all-MiniLM-L6-v2` embeddings stored in Qdrant with cosine similarity. Each chunk keeps its source URL so answers can cite where they came from.
+- **3,050 synthetic instruction and answer pairs** generated with GPT-4o from the cleaned corpus and published to Hugging Face.
+- **LoRA fine-tuning of Llama 3.1 8B** in 4-bit with Unsloth: rank 16 adapters on all attention and MLP projections (41.9M trainable parameters), one epoch on a single A100.
+- **Local serving**: the model is exported to GGUF (Q8_0), pushed to Ollama and used through Open WebUI.
+- **Reproducible infrastructure**: MongoDB, Qdrant, ClearML, Ollama and Open WebUI all run from one `docker-compose.yml`.
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph Ingestion["1. Ingestion pipeline (each step is a ClearML task)"]
+        direction LR
+        A[GitHub / Medium / YouTube<br/>175 sources] -->|scrape| B[(MongoDB<br/>raw docs)]
+        B -->|clean| C[(MongoDB<br/>cleaned docs)]
+        C -->|chunk| D[(MongoDB<br/>chunks)]
+        D -->|embed<br/>MiniLM-L6| E[(Qdrant<br/>rag_vectors)]
+    end
+
+    subgraph Training["2. Fine-tuning"]
+        direction LR
+        F[GPT-4o generates<br/>3,050 instruction pairs] -->|LoRA with Unsloth| G[Llama 3.1 8B<br/>fine-tuned]
+        G -->|export GGUF| H[Ollama]
+    end
+
+    subgraph Serving["3. Inference"]
+        direction LR
+        Q[User question] -->|embed| E2{{Qdrant search}}
+        E2 -->|top-k chunks| R[Prompt with context]
+        R --> M[Fine-tuned model<br/>on Ollama]
+        M --> S[Answer + sources]
+        W[Open WebUI] -. chat .-> M
+    end
+
+    Ingestion -->|cleaned docs| Training
+    Ingestion -->|vector index| Serving
+    Training -->|served model| Serving
 ```
 
+### 1. Ingestion (`app/scraper.py`)
+Source URLs live in `data/media_urls.json` and are loaded into MongoDB on the first run. Each platform has its own scraper:
+- **GitHub**: shallow-clones the repository and stores the text of every file, skipping binaries and lockfiles.
+- **Medium**: fetches the article and extracts the title, subtitle, author, date and body with BeautifulSoup.
+- **YouTube**: pulls the English transcript with `youtube-transcript-api`.
 
-The project uses a **`.env (.env.example in the app folder)`** to access environment variables and should be updated with appropriate values to access MongoDB and Qdrant DB.
+### 2. Cleaning and chunking (`app/preprocessing/`)
+Each document is normalized per platform, stripped of non-ASCII symbols and collapsed whitespace, then split into chunks of about 2,000 characters on word boundaries.
 
+### 3. Featurization (`app/featurizer.py`)
+Chunks are embedded with `sentence-transformers/all-MiniLM-L6-v2` (mean pooling) and upserted into the Qdrant `rag_vectors` collection along with their text, platform and URL.
 
-##  Usage
+### 4. Instruction dataset (`app/generate_instruct_dataset.py`, `app/export_instruct.py`)
+GPT-4o reads the cleaned corpus in chunks and writes five self-contained instruction and answer pairs per chunk, in the style of the source material. Duplicates are skipped and the result is exported to Hugging Face.
 
-Explain how to use the project, including any necessary commands or steps.
+### 5. Fine-tuning (`notebooks/02_finetune_llama3_lora.ipynb`)
+Runs on Colab. Llama 3.1 8B is loaded in 4-bit and trained with LoRA (r=16, alpha=16) through TRL's `SFTTrainer`: learning rate 2e-4, effective batch size 8, 8-bit AdamW, 381 steps. The adapters are merged and exported to GGUF for Ollama.
 
-  
-```bash
+### 6. Retrieval and generation (`app/rag.py`)
+The question is embedded with the same model used for the corpus. Qdrant returns the top-k chunks, which are placed into the prompt for the fine-tuned model served by Ollama. The answer is printed with the source URLs it was grounded in.
 
-# Compose the docker file
+## Tech stack
 
-docker-compose  up  -d
+| Area | Tools |
+| --- | --- |
+| Language | Python |
+| Data and storage | MongoDB, Qdrant |
+| Scraping | Requests, BeautifulSoup, youtube-transcript-api, Git |
+| Embeddings | Hugging Face Transformers, PyTorch, all-MiniLM-L6-v2 |
+| Dataset generation | OpenAI GPT-4o, Hugging Face Datasets |
+| Fine-tuning | Llama 3.1 8B, LoRA, Unsloth, TRL |
+| Serving | Ollama (GGUF), Open WebUI |
+| MLOps | ClearML, Docker Compose |
+
+## Repository layout
+
+```
+app/
+  scraper.py                   # GitHub, Medium and YouTube scrapers
+  preprocessing/clean.py       # per-platform cleaning
+  preprocessing/chunk.py       # chunking
+  featurizer.py                # embeddings into Qdrant
+  pipeline.py                  # runs the ingestion steps in order
+  generate_instruct_dataset.py # GPT-4o instruction pairs
+  export_instruct.py           # publish dataset to Hugging Face
+  rag.py                       # retrieve from Qdrant, answer with Ollama
+  configs.py                   # settings from .env
+notebooks/
+  01_etl_and_featurization.ipynb
+  02_finetune_llama3_lora.ipynb
+data/media_urls.json           # the 175 source URLs
+qdrant_storage/                # snapshot of the populated vector store
+docker-compose.yml
 ```
 
- 
-# Run RAG Jupyter Notebook
+## Running it locally
 
-Here  we  must  run  the  Jupyter  Notebook  -
+**Prerequisites:** Docker, Python 3.11+, and about 10 GB of disk for the model.
 
-1.  URLs  are  collected  from  MongoDB **`(collection - media_urls)`**  for  scraping the content.
+1. Clone the repository and install the dependencies.
 
-2.  Once  scraping  is  completed  we  clean  the  data  from  the  scraped content  which  is  then stored  in  Mongo  DB  of  any  non-ASCII  characters.
+   ```bash
+   git clone https://github.com/anindaghosh/cs-gy-6613-artificial-intelligence-project
+   ```
 
-3.  We complete another pre-preprocessing step to chunk the content into smaller chunks  and  embed  the chunks  into  the  Vector  DB (Qdrant).
+   ```bash
+   cd cs-gy-6613-artificial-intelligence-project
+   ```
 
-  
+   ```bash
+   python -m venv venv && source venv/bin/activate
+   ```
 
-# Run Finetuning Jupyter Notebook
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-1.  This  notebook  setsup  a  training  a  pipeline  for  fine-tuning  using  the  `LLaMA  3.1.8`  pre-trained  model  using  `Low-Rank  Adaptation (LoRA)` for optimized memory usage and faster training.
+2. Copy the environment file. The defaults match `docker-compose.yml`. `OPENAI_API_KEY` and `HF_TOKEN` are only needed to regenerate and publish the dataset.
 
-2. Instruction-answer  pairs  are  extracted  from  GPT  based  on  the  data  from  Qdrant,  a  vector  search  engine,  and  used  to  create  a  custom  dataset  for  training  the  model  which  is  then  uploaded  to  **Hugging Face** and **Ollama**.
+   ```bash
+   cp .env.example .env
+   ```
 
-Instruct Dataset has been uploaded to [anindaghosh/cs-gy-6613-rag-instruct-set](https://huggingface.co/datasets/anindaghosh/cs-gy-6613-rag-instruct-set) on Hugging Face.
+3. Start the services (MongoDB, Qdrant, ClearML, Ollama, Open WebUI).
 
-The fine-tuned model has been uploaded to [anindaghosh/cs-gy-6613-rag-project](https://huggingface.co/anindaghosh/cs-gy-6613-rag-project) on Hugging Face and [anindaghosh/cs-gy-6613-rag-project](https://ollama.com/anindaghosh/cs-gy-6613-rag-project) on Ollama.
+   ```bash
+   docker compose up -d
+   ```
 
-  
+4. Pull the fine-tuned model into Ollama.
 
-# Final Result
+   ```bash
+   docker compose exec ollama ollama pull anindaghosh/cs-gy-6613-rag-project
+   ```
 
-1.  With  the  help  of  Open  Web  UI  the  user  to  interact  with  the  RAG  system  using  Ollama  and  pull  our  model  from  HF  hub.
+5. Ask a question. The committed `qdrant_storage/` snapshot means retrieval works without re-running ingestion.
 
-2.  ClearML  experiment  tracking  and  orchestration,  ensuring  that  all  training  parameters  and  results  are  logged  for  reproducibility.
+   ```bash
+   python -m app.rag "How do I navigate to a specific pose with Nav2, including replanning?"
+   ```
 
-![Final Result](final_result.png)
-  
+   To chat with the model directly instead, open Open WebUI at http://localhost:3000.
 
-##  Features
+### Rebuilding the corpus
 
-List the key features of your project.
+Run every ingestion step (scrape, clean, chunk, featurize), or only some of them:
 
-- Feature 1: Scraping content from Media URLs (Github, Medium, YouTube)
-- Feature 2: Clean the extracted content using Regex and other best practices to remove Non-ASCII characters
-- Feature 3: Chunk the large documents into smaller, more manageable segments 
-- Feature 4: Embed the chunks by transforming text into numerical vectors that capture its semantic meaning
-- Feature 5: Generated instruct datasets using OpenAI APIs and push to HuggingFace
-- Feature 6: Fine-Tuning of Llama Model using LoRA
-- Feature 7: Model Deployment to Hugging Face and Ollama
-- Feature 8: Inference using Open WebUI
-  
+```bash
+python -m app.pipeline
+```
 
-##  Technologies Used
+```bash
+python -m app.pipeline --steps chunk featurize
+```
 
-Mention the technologies and tools used in the project.
+Each step is logged as a separate ClearML task, visible at http://localhost:8080. The same steps can be run interactively in `notebooks/01_etl_and_featurization.ipynb`.
 
- 
--  Python
+### Regenerating the instruction dataset
 
--  TensorFlow
+```bash
+python -m app.generate_instruct_dataset
+```
 
--  NumPy
+```bash
+python -m app.export_instruct
+```
 
--  Other relevant technologies
+## Lessons learned and next steps
 
-  
+- **Fine-tuning teaches style more than facts.** With retrieval switched off, the model sometimes answers Nav2 questions with ROS1 concepts such as `move_base`. Grounding answers in retrieved chunks matters more than more training steps, which is why `app/rag.py` passes the context explicitly.
+- **Evaluation is the main gap.** A next step would be a held-out question set scored for retrieval hit rate and answer faithfulness (for example with RAGAS), so changes to chunking or models can be compared with numbers.
+- **Chunking is naive.** Fixed-size chunks split code blocks and Markdown sections. Splitting on headings and code fences, plus a reranker on the retrieved chunks, would likely improve answer quality.
+- **The pipeline runs sequentially.** The steps are tracked in ClearML but not yet scheduled as a ClearML pipeline with caching between steps.
 
-##  Contributing
+## Team
 
-Guidelines for contributing to the project.
-
-
-
-1.  Fork the repository
-
-2.  Create a new branch (`git checkout -b feature-branch`)
-
-3.  Commit your changes (`git commit -m 'Add some feature'`)
-
-4.  Push to the branch (`git push origin feature-branch`)
-
-5.  Open a pull request
+- **Aninda Ghosh** ([GitHub](https://github.com/anindaghosh), [Hugging Face](https://huggingface.co/anindaghosh))
+- **Samrudhi Baldota** ([GitHub](https://github.com/samrudhibaldota))
