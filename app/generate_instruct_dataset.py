@@ -1,8 +1,8 @@
 from openai import OpenAI
 import json
 
-from helpers.mongo_client import get_mongo_client
-from configs import OPENAI_API_KEY
+from app.helpers.mongo_client import get_mongo_client
+from app.configs import OPENAI_API_KEY
 
 # Set up OpenAI API key
 
@@ -112,12 +112,6 @@ if __name__ == "__main__":
     collection = db["rag_cleaned_data"]
 
     instruct_set = db["instruct_set"]
-
-    # Example usage
-    sample_context = (
-        "The linux-real-time-kernel-builder is a tool to configure and build real-time kernels optimized for ROS2. "
-        "It provides automation for downloading and setting up the kernel with required configurations for real-time applications."
-    )
 
     # get context from my own data in mongo
     context = get_context_from_mongo(collection=collection, platform="github")

@@ -104,7 +104,13 @@ class Featurizer:
                     collection_name="rag_vectors",
                     points=[
                         PointStruct(
-                            id=str(uuid4()), vector=embeddings, payload={"text": text}
+                            id=str(uuid4()),
+                            vector=embeddings,
+                            payload={
+                                "text": text,
+                                "platform": doc["platform"],
+                                "url": doc["url"],
+                            },
                         )
                     ],
                 )
@@ -119,7 +125,7 @@ class Featurizer:
         logger.error(f"Error featurizing data: {e}")
 
 
-def etl_featurize_step():
+def etl_featurize_step(limit=None):
 
     task = Task.init(project_name="cs-gy-6613-rag", task_name="etl_featurizer")
 
@@ -130,7 +136,9 @@ def etl_featurize_step():
     chunk_collection = db["rag_chunked_data"]
     featurized_collection = db["featurized_data"]
 
-    chunks = chunk_collection.find({}).limit(100)
+    chunks = chunk_collection.find({})
+    if limit:
+        chunks = chunks.limit(limit)
 
     featurizer = Featurizer()
 

@@ -1,3 +1,4 @@
+import json
 import pymongo
 import requests
 import re
@@ -15,6 +16,10 @@ from urllib.parse import urlparse, parse_qs
 from clearml import Task
 
 from app.configs import MONGO_CONNECTION_URL
+
+MEDIA_URLS_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "media_urls.json"
+)
 
 
 class MediumScraper:
@@ -99,10 +104,9 @@ class GithubScraper:
         local_temp = mkdtemp()
 
         try:
-            os.chdir(local_temp)
-            subprocess.run(["git", "clone", link])
+            repo_path = os.path.join(local_temp, repo_name)
+            subprocess.run(["git", "clone", "--depth", "1", link, repo_path], check=True)
 
-            repo_path = os.path.join(local_temp, os.listdir(local_temp)[0])  #
             tree = {}
             for root, _, files in os.walk(repo_path):
                 dir = root.replace(repo_path, "").lstrip("/")
@@ -113,7 +117,7 @@ class GithubScraper:
                         continue
                     file_path = os.path.join(dir, file)
                     with open(os.path.join(root, file), "r", errors="ignore") as f:
-                        tree[file_path] = f.read().replace(" ", "")
+                        tree[file_path] = f.read()
 
             # write to database
 
@@ -156,9 +160,6 @@ class YoutubeScraper:
         except Exception as e:
             logger.error(f"Error fetching transcript for {video_id}: {e}")
             return None
-
-        finally:
-            logger.info(f"Finished scraping Youtube video: {link}")
 
     def preprocess_transcript(self, transcript):
         """
@@ -229,6 +230,13 @@ def etl_scrape():
     client = pymongo.MongoClient(MONGO_CONNECTION_URL)
     db = client["rag"]
     collection = db["media_urls"]
+
+    # seed the source list from data/media_urls.json on a fresh database
+    if collection.count_documents({}) == 0:
+        with open(MEDIA_URLS_PATH) as f:
+            seed = [{"url": doc["url"], "platform": doc["platform"]} for doc in json.load(f)]
+        collection.insert_many(seed)
+        logger.info(f"Seeded {len(seed)} media URLs from {MEDIA_URLS_PATH}")
 
     urls = collection.find()
 

@@ -1,37 +1,46 @@
-from clearml import PipelineController
+import argparse
+
 from loguru import logger
 
-logger.info("Pipeline started")
+from app.featurizer import etl_featurize_step
+from app.preprocessing.chunk import etl_chunk
+from app.preprocessing.clean import etl_clean
+from app.scraper import etl_scrape
 
-pipe = PipelineController(
-    name="CS-GY-6613-RAG-Pipeline",
-    project="cs-gy-6613-rag",
-    version="1.0.0",
-    add_pipeline_tags=False,
-)
+STEPS = ["scrape", "clean", "chunk", "featurize"]
 
-pipe.set_default_execution_queue("default")
 
-pipe.add_step(
-    name="test", base_task_project="cs-gy-6613-rag", base_task_name="Pipeline Task 1"
-)
-# pipe.add_step(
-#     name="test1",
-#     parents=[
-#         "test",
-#     ],
-#     base_task_project="cs-gy-6613-rag",
-#     base_task_name="Pipeline Task 2",
-# )
-# pipe.add_step(
-#     name="test2",
-#     parents=[
-#         "test1",
-#     ],
-#     base_task_project="cs-gy-6613-rag",
-#     base_task_name="Pipeline Task 3",
-# )
+def main():
+    parser = argparse.ArgumentParser(
+        description="Run the ingestion pipeline. Each step is tracked as its own ClearML task."
+    )
+    parser.add_argument(
+        "--steps",
+        nargs="+",
+        choices=STEPS,
+        default=STEPS,
+        help="steps to run, in order (default: all)",
+    )
+    parser.add_argument(
+        "--limit", type=int, default=None, help="only featurize the first N chunks"
+    )
+    args = parser.parse_args()
 
-pipe.start(queue="default")
+    for step in STEPS:
+        if step not in args.steps:
+            continue
 
-logger.info("Pipeline done")
+        logger.info(f"Running step: {step}")
+
+        if step == "scrape":
+            etl_scrape()
+        elif step == "clean":
+            etl_clean()
+        elif step == "chunk":
+            etl_chunk()
+        elif step == "featurize":
+            etl_featurize_step(limit=args.limit)
+
+
+if __name__ == "__main__":
+    main()

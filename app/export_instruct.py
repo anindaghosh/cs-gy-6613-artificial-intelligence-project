@@ -1,4 +1,4 @@
-from helpers.mongo_client import get_mongo_client
+from app.helpers.mongo_client import get_mongo_client
 
 # export the instruct set to a file
 

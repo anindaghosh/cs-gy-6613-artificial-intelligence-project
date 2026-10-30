@@ -1,0 +1,22 @@
+# ingestion
+beautifulsoup4==4.12.3
+requests==2.32.3
+youtube-transcript-api==0.6.3
+
+# storage
+pymongo==4.10.1
+qdrant-client==1.12.1
+
+# embeddings
+torch==2.5.1
+transformers==4.46.3
+
+# instruction dataset generation and publishing
+openai==1.55.3
+pandas==2.2.3
+huggingface-hub==0.26.2
+
+# orchestration and utilities
+clearml==1.16.5
+loguru==0.7.2
+python-dotenv==1.0.1
